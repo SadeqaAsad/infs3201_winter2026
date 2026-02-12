@@ -1,14 +1,21 @@
 {
-  "name": "a1_files",
+  "name": "assignment2_60303237",
   "version": "1.0.0",
-  "description": "",
+  "description": "INFS3201 Assignment 2 - Employee Scheduling System",
+  "homepage": "https://github.com/SadeqaAsad/infs3201_winter2026#readme",
+  "bugs": {
+    "url": "https://github.com/SadeqaAsad/infs3201_winter2026/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SadeqaAsad/infs3201_winter2026.git"
+  },
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "server.js",
+  "main": "presentation.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node presentation.js"
   },
   "dependencies": {
     "prompt-sync": "^4.2.0"
