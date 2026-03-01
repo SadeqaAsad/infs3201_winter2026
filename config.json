@@ -1,3 +1,4 @@
 {
-  "maxDailyHours": 9
+    "mongoUri": "mongodb+srv://60303237:12class34D@cluster0.l3ymimn.mongodb.net/?appName=Cluster0",
+    "maxDailyHours": 9
 }

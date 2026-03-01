@@ -1,16 +1,42 @@
+const { MongoClient } = require('mongodb');
 const fs = require('fs/promises');
 
-const employeesFile = 'employees.json';
-const shiftsFile = 'shifts.json';
-const assignmentsFile = 'assignments.json';
 const configFile = 'config.json';
+const DB_NAME = 'infs3201_winter2026';
+
+let client = null;
+
+/**
+ * Returns a connected MongoClient, reusing the existing connection if available.
+ *
+ * @returns {Promise<MongoClient>} A connected MongoClient instance
+ */
+async function getClient() {
+    if (client) {
+        return client;
+    }
+    const config = await getConfig();
+    client = new MongoClient(config.mongoUri);
+    await client.connect();
+    return client;
+}
+
+/**
+ * Returns the application database object.
+ *
+ * @returns {Promise<import('mongodb').Db>} The MongoDB database object
+ */
+async function getDb() {
+    const c = await getClient();
+    return c.db(DB_NAME);
+}
 
 /**
  * @returns {Promise<Array>} Array of employee objects
  */
 async function getAllEmployees() {
-    const rawData = await fs.readFile(employeesFile, 'utf8');
-    return JSON.parse(rawData);
+    const db = await getDb();
+    return await db.collection('employees').find({}).toArray();
 }
 
 /**
@@ -18,15 +44,9 @@ async function getAllEmployees() {
  * @returns {Promise<Object|null>} The employee object if found, null otherwise
  */
 async function findEmployee(employeeId) {
-    const employees = await getAllEmployees();
-
-    for (let i = 0; i < employees.length; i++) {
-        if (employees[i].employeeId === employeeId) {
-            return employees[i];
-        }
-    }
-
-    return null;
+    const db = await getDb();
+    const employee = await db.collection('employees').findOne({ employeeId: employeeId });
+    return employee || null;
 }
 
 /**
@@ -34,15 +54,16 @@ async function findEmployee(employeeId) {
  * @returns {Promise<void>}
  */
 async function saveEmployees(employees) {
-    await fs.writeFile(employeesFile, JSON.stringify(employees, null, 4));
+    const db = await getDb();
+    await db.collection('employees').insertOne(employees[employees.length - 1]);
 }
 
 /**
  * @returns {Promise<Array>} Array of shift objects
  */
 async function getAllShifts() {
-    const rawData = await fs.readFile(shiftsFile, 'utf8');
-    return JSON.parse(rawData);
+    const db = await getDb();
+    return await db.collection('shifts').find({}).toArray();
 }
 
 /**
@@ -50,23 +71,17 @@ async function getAllShifts() {
  * @returns {Promise<Object|null>} The shift object if found, null otherwise
  */
 async function findShift(shiftId) {
-    const shifts = await getAllShifts();
-
-    for (let i = 0; i < shifts.length; i++) {
-        if (shifts[i].shiftId === shiftId) {
-            return shifts[i];
-        }
-    }
-
-    return null;
+    const db = await getDb();
+    const shift = await db.collection('shifts').findOne({ shiftId: shiftId });
+    return shift || null;
 }
 
 /**
  * @returns {Promise<Array>} Array of assignment objects
  */
 async function getAllAssignments() {
-    const rawData = await fs.readFile(assignmentsFile, 'utf8');
-    return JSON.parse(rawData);
+    const db = await getDb();
+    return await db.collection('assignments').find({}).toArray();
 }
 
 /**
@@ -74,16 +89,8 @@ async function getAllAssignments() {
  * @returns {Promise<Array>} Array of assignment objects for the employee
  */
 async function getAssignmentsByEmployee(employeeId) {
-    const assignments = await getAllAssignments();
-    const results = [];
-
-    for (let i = 0; i < assignments.length; i++) {
-        if (assignments[i].employeeId === employeeId) {
-            results.push(assignments[i]);
-        }
-    }
-
-    return results;
+    const db = await getDb();
+    return await db.collection('assignments').find({ employeeId: employeeId }).toArray();
 }
 
 /**
@@ -92,27 +99,27 @@ async function getAssignmentsByEmployee(employeeId) {
  * @returns {Promise<Array>} Array of shift objects for the employee on that date
  */
 async function getAssignmentsByEmployeeAndDate(employeeId, date) {
-    const assignments = await getAllAssignments();
-    const shifts = await getAllShifts();
+    const db = await getDb();
+    const assignments = await db.collection('assignments').find({ employeeId: employeeId }).toArray();
     const results = [];
 
     for (let i = 0; i < assignments.length; i++) {
-        if (assignments[i].employeeId === employeeId) {
-            for (let j = 0; j < shifts.length; j++) {
-                if (shifts[j].shiftId === assignments[i].shiftId && shifts[j].date === date) {
-                    results.push(shifts[j]);
-                }
-            }
+        const shift = await db.collection('shifts').findOne({
+            shiftId: assignments[i].shiftId,
+            date: date
+        });
+        if (shift) {
+            results.push(shift);
         }
     }
 
     return results;
 }
 
-// REMOVED: assignmentExists   - only used by assignEmployeeToShift
-// REMOVED: saveAssignments     - only used by assignEmployeeToShift
-
 /**
+ * Reads the application configuration from config.json.
+ * Config is intentionally kept as a file, not stored in the database.
+ *
  * @returns {Promise<Object>} Configuration object
  */
 async function getConfig() {
@@ -129,7 +136,5 @@ module.exports = {
     getAllAssignments,
     getAssignmentsByEmployee,
     getAssignmentsByEmployeeAndDate,
-    // REMOVED: assignmentExists
-    // REMOVED: saveAssignments
     getConfig
 };
