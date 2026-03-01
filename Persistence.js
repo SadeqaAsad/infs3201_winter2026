@@ -1,52 +1,48 @@
-const { MongoClient } = require('mongodb');
 const fs = require('fs/promises');
+const mongodb = require('mongodb');
 
-const configFile = 'config.json';
 const DB_NAME = 'infs3201_winter2026';
 
-let client = null;
+let client = undefined;
 
 /**
- * Returns a connected MongoClient, reusing the existing connection if available.
+ * Creates and returns a singleton MongoDB client connection.
  *
- * @returns {Promise<MongoClient>} A connected MongoClient instance
+ * @returns {Promise<mongodb.MongoClient>} Connected MongoDB client
  */
 async function getClient() {
-    if (client) {
-        return client;
+    if (!client) {
+        client = new mongodb.MongoClient('mongodb+srv://60303237:12class34@cluster0.l3ymimn.mongodb.net/?appName=Cluster0');
+        await client.connect();
     }
-    const config = await getConfig();
-    client = new MongoClient(config.mongoUri);
-    await client.connect();
     return client;
 }
 
 /**
- * Returns the application database object.
+ * Retrieves all employees from the employees collection.
  *
- * @returns {Promise<import('mongodb').Db>} The MongoDB database object
- */
-async function getDb() {
-    const c = await getClient();
-    return c.db(DB_NAME);
-}
-
-/**
- * @returns {Promise<Array>} Array of employee objects
+ * @returns {Promise<Array>} Array of all employee objects
  */
 async function getAllEmployees() {
-    const db = await getDb();
-    return await db.collection('employees').find({}).toArray();
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    let employees = db.collection('employees');
+    let result = employees.find();
+    return await result.toArray();
 }
 
 /**
- * @param {string} employeeId - The employee ID to search for
- * @returns {Promise<Object|null>} The employee object if found, null otherwise
+ * Retrieves a single employee by their ID.
+ *
+ * @param {string} employeeId - The unique identifier of the employee
+ * @returns {Promise<Object|null>} The employee object, or null if not found
  */
 async function findEmployee(employeeId) {
-    const db = await getDb();
-    const employee = await db.collection('employees').findOne({ employeeId: employeeId });
-    return employee || null;
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    let employees = db.collection('employees');
+    let result = await employees.findOne({ employeeId: employeeId });
+    return result;
 }
 
 /**
@@ -56,7 +52,8 @@ async function findEmployee(employeeId) {
  * @returns {Promise<void>}
  */
 async function saveEmployees(employees) {
-    const db = await getDb();
+    let c = await getClient();
+    let db = c.db(DB_NAME);
     await db.collection('employees').insertOne(employees[employees.length - 1]);
 }
 
@@ -69,7 +66,8 @@ async function saveEmployees(employees) {
  * @returns {Promise<void>}
  */
 async function updateEmployee(employeeId, name, phone) {
-    const db = await getDb();
+    let c = await getClient();
+    let db = c.db(DB_NAME);
     await db.collection('employees').updateOne(
         { employeeId: employeeId },
         { $set: { name: name, phone: phone } }
@@ -77,52 +75,73 @@ async function updateEmployee(employeeId, name, phone) {
 }
 
 /**
- * @returns {Promise<Array>} Array of shift objects
+ * Retrieves all shifts from the shifts collection.
+ *
+ * @returns {Promise<Array>} Array of all shift objects
  */
 async function getAllShifts() {
-    const db = await getDb();
-    return await db.collection('shifts').find({}).toArray();
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    let shifts = db.collection('shifts');
+    let result = shifts.find();
+    return await result.toArray();
 }
 
 /**
- * @param {string} shiftId - The shift ID to search for
- * @returns {Promise<Object|null>} The shift object if found, null otherwise
+ * Retrieves a single shift by its ID.
+ *
+ * @param {string} shiftId - The unique identifier of the shift
+ * @returns {Promise<Object|null>} The shift object, or null if not found
  */
 async function findShift(shiftId) {
-    const db = await getDb();
-    const shift = await db.collection('shifts').findOne({ shiftId: shiftId });
-    return shift || null;
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    let shifts = db.collection('shifts');
+    return await shifts.findOne({ shiftId: shiftId });
 }
 
 /**
- * @returns {Promise<Array>} Array of assignment objects
+ * Retrieves all assignments from the assignments collection.
+ *
+ * @returns {Promise<Array>} Array of all assignment objects
  */
 async function getAllAssignments() {
-    const db = await getDb();
-    return await db.collection('assignments').find({}).toArray();
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    let assignments = db.collection('assignments');
+    let result = assignments.find();
+    return await result.toArray();
 }
 
 /**
- * @param {string} employeeId - The employee ID to search for
- * @returns {Promise<Array>} Array of assignment objects for the employee
+ * Retrieves all assignments for a specific employee by their employee ID.
+ *
+ * @param {string} employeeId - The unique identifier of the employee
+ * @returns {Promise<Array>} Array of assignment objects belonging to the employee
  */
 async function getAssignmentsByEmployee(employeeId) {
-    const db = await getDb();
-    return await db.collection('assignments').find({ employeeId: employeeId }).toArray();
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    let assignments = db.collection('assignments');
+    let result = assignments.find({ employeeId: employeeId });
+    return await result.toArray();
 }
 
 /**
- * @param {string} employeeId - The employee ID to search for
+ * Retrieves all assignments for a specific employee on a specific date.
+ *
+ * @param {string} employeeId - The unique identifier of the employee
  * @param {string} date - The date to filter by (format: YYYY-MM-DD)
  * @returns {Promise<Array>} Array of shift objects for the employee on that date
  */
 async function getAssignmentsByEmployeeAndDate(employeeId, date) {
-    const db = await getDb();
-    const assignments = await db.collection('assignments').find({ employeeId: employeeId }).toArray();
-    const results = [];
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    let assignments = await db.collection('assignments').find({ employeeId: employeeId }).toArray();
+    let results = [];
 
     for (let i = 0; i < assignments.length; i++) {
-        const shift = await db.collection('shifts').findOne({
+        let shift = await db.collection('shifts').findOne({
             shiftId: assignments[i].shiftId,
             date: date
         });
@@ -135,14 +154,13 @@ async function getAssignmentsByEmployeeAndDate(employeeId, date) {
 }
 
 /**
- * Reads the application configuration from config.json.
- * Config is intentionally kept as a file, not stored in the database.
+ * Reads application configuration from the local config.json file.
  *
- * @returns {Promise<Object>} Configuration object
+ * @returns {Promise<Object>} Configuration object containing settings such as maxDailyHours
  */
 async function getConfig() {
-    const rawData = await fs.readFile(configFile, 'utf8');
-    return JSON.parse(rawData);
+    let data = await fs.readFile('config.json', 'utf-8');
+    return JSON.parse(data);
 }
 
 module.exports = {
