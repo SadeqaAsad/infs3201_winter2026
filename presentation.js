@@ -51,7 +51,7 @@ async function addNewEmployee() {
     console.log('Employee added...');
 }
 
-// REMOVED: assignEmployeeToShift - feature removed per assignment instructions
+// REMOVED: assignEmployeeToShift s
 
 /**
  * Prompts user for employee ID and displays their schedule in CSV format.

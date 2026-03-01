@@ -25,6 +25,8 @@ function computeShiftDuration(startTime, endTime) {
 
 /**
  * Returns the full list of employees.
+ *
+ * @returns {Promise<Array>} Array of employee objects
  */
 async function getEmployeeList() {
     return await persistence.getAllEmployees();
@@ -32,6 +34,8 @@ async function getEmployeeList() {
 
 /**
  * Finds the next available employee ID (E###).
+ *
+ * @returns {Promise<string>} The next employee ID string (e.g. "E010")
  */
 async function generateNextEmployeeId() {
     const employees = await persistence.getAllEmployees();
@@ -57,6 +61,10 @@ async function generateNextEmployeeId() {
 
 /**
  * Creates a new employee and saves it.
+ *
+ * @param {string} name - The employee's full name
+ * @param {string} phone - The employee's phone number
+ * @returns {Promise<Object>} The newly created employee object
  */
 async function createEmployee(name, phone) {
     const employees = await persistence.getAllEmployees();
@@ -74,14 +82,11 @@ async function createEmployee(name, phone) {
     return newEmployee;
 }
 
-// REMOVED: validateEmployeeExists     
-// REMOVED: validateShiftExists         
-// REMOVED: getEmployeeHoursForDate   
-// REMOVED: checkHourLimit              
-// REMOVED: assignEmployeeToShift       
-
 /**
  * Returns an employee's schedule sorted by date and time.
+ *
+ * @param {string} employeeId - The ID of the employee
+ * @returns {Promise<Array>} Sorted array of shift objects
  */
 async function getEmployeeSchedule(employeeId) {
     const empId = String(employeeId).trim();
@@ -113,10 +118,33 @@ async function getEmployeeSchedule(employeeId) {
     return schedule;
 }
 
+/**
+ * Finds a single employee by ID.
+ *
+ * @param {string} employeeId - The employee ID to look up
+ * @returns {Promise<Object|null>} The employee object, or null if not found
+ */
+async function findEmployee(employeeId) {
+    return await persistence.findEmployee(String(employeeId).trim());
+}
+
+/**
+ * Updates the name and phone number of an existing employee.
+ *
+ * @param {string} employeeId - The ID of the employee to update
+ * @param {string} name - The new name
+ * @param {string} phone - The new phone number
+ * @returns {Promise<void>}
+ */
+async function updateEmployee(employeeId, name, phone) {
+    await persistence.updateEmployee(employeeId, name, phone);
+}
+
 module.exports = {
     computeShiftDuration,
     getEmployeeList,
     createEmployee,
-    getEmployeeSchedule
-    // REMOVED: assignEmployeeToShift
+    getEmployeeSchedule,
+    findEmployee,
+    updateEmployee
 };

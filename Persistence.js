@@ -50,12 +50,30 @@ async function findEmployee(employeeId) {
 }
 
 /**
- * @param {Array} employees - Array of employee objects to save
+ * Inserts a new employee document into the database.
+ *
+ * @param {Array} employees - Full array of employees (only the last one is inserted)
  * @returns {Promise<void>}
  */
 async function saveEmployees(employees) {
     const db = await getDb();
     await db.collection('employees').insertOne(employees[employees.length - 1]);
+}
+
+/**
+ * Updates an existing employee's name and phone number.
+ *
+ * @param {string} employeeId - The ID of the employee to update
+ * @param {string} name - The new name
+ * @param {string} phone - The new phone number
+ * @returns {Promise<void>}
+ */
+async function updateEmployee(employeeId, name, phone) {
+    const db = await getDb();
+    await db.collection('employees').updateOne(
+        { employeeId: employeeId },
+        { $set: { name: name, phone: phone } }
+    );
 }
 
 /**
@@ -131,6 +149,7 @@ module.exports = {
     getAllEmployees,
     findEmployee,
     saveEmployees,
+    updateEmployee,
     getAllShifts,
     findShift,
     getAllAssignments,

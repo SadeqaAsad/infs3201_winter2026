@@ -13,11 +13,13 @@
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "presentation.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node presentation.js"
+    "start": "node app.js"
   },
   "dependencies": {
+    "express": "^5.2.1",
+    "express-handlebars": "^8.0.6",
     "mongodb": "^7.1.0",
     "prompt-sync": "^4.2.0"
   }

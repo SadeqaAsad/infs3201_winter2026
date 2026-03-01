@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Details</title>
+    <style>
+        .morning { background-color: yellow; }
+    </style>
+</head>
+<body>
+    <h1>Employee Details</h1>
+    <p>Name: {{employee.name}}</p>
+    <p>Phone: {{employee.phone}}</p>
+    <a href="/edit/{{employee.employeeId}}">Edit Details</a>
+    <h2>Shifts</h2>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+        </tr>
+        {{#each schedule}}
+        <tr>
+            <td>{{date}}</td>
+            <td class="{{#if isMorning}}morning{{/if}}">{{startTime}}</td>
+            <td>{{endTime}}</td>
+        </tr>
+        {{/each}}
+    </table>
+</body>
+</html>
