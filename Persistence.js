@@ -19,13 +19,13 @@ async function getAllEmployees() {
  */
 async function findEmployee(employeeId) {
     const employees = await getAllEmployees();
-    
+
     for (let i = 0; i < employees.length; i++) {
         if (employees[i].employeeId === employeeId) {
             return employees[i];
         }
     }
-    
+
     return null;
 }
 
@@ -38,8 +38,6 @@ async function saveEmployees(employees) {
 }
 
 /**
- * Loads all shifts from the shifts.json file.
- * 
  * @returns {Promise<Array>} Array of shift objects
  */
 async function getAllShifts() {
@@ -53,13 +51,13 @@ async function getAllShifts() {
  */
 async function findShift(shiftId) {
     const shifts = await getAllShifts();
-    
+
     for (let i = 0; i < shifts.length; i++) {
         if (shifts[i].shiftId === shiftId) {
             return shifts[i];
         }
     }
-    
+
     return null;
 }
 
@@ -78,17 +76,17 @@ async function getAllAssignments() {
 async function getAssignmentsByEmployee(employeeId) {
     const assignments = await getAllAssignments();
     const results = [];
-    
+
     for (let i = 0; i < assignments.length; i++) {
         if (assignments[i].employeeId === employeeId) {
             results.push(assignments[i]);
         }
     }
-    
+
     return results;
 }
 
-/*
+/**
  * @param {string} employeeId - The employee ID to search for
  * @param {string} date - The date to filter by (format: YYYY-MM-DD)
  * @returns {Promise<Array>} Array of shift objects for the employee on that date
@@ -97,10 +95,9 @@ async function getAssignmentsByEmployeeAndDate(employeeId, date) {
     const assignments = await getAllAssignments();
     const shifts = await getAllShifts();
     const results = [];
-    
+
     for (let i = 0; i < assignments.length; i++) {
         if (assignments[i].employeeId === employeeId) {
-            // Find the corresponding shift
             for (let j = 0; j < shifts.length; j++) {
                 if (shifts[j].shiftId === assignments[i].shiftId && shifts[j].date === date) {
                     results.push(shifts[j]);
@@ -108,34 +105,12 @@ async function getAssignmentsByEmployeeAndDate(employeeId, date) {
             }
         }
     }
-    
+
     return results;
 }
 
-/**
- * @param {string} employeeId - The employee ID
- * @param {string} shiftId - The shift ID
- * @returns {Promise<boolean>} True if assignment exists, false otherwise
- */
-async function assignmentExists(employeeId, shiftId) {
-    const assignments = await getAllAssignments();
-    
-    for (let i = 0; i < assignments.length; i++) {
-        if (assignments[i].employeeId === employeeId && assignments[i].shiftId === shiftId) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-/**
- * @param {Array} assignments - Array of assignment objects to save
- * @returns {Promise<void>}
- */
-async function saveAssignments(assignments) {
-    await fs.writeFile(assignmentsFile, JSON.stringify(assignments, null, 4));
-}
+// REMOVED: assignmentExists   - only used by assignEmployeeToShift
+// REMOVED: saveAssignments     - only used by assignEmployeeToShift
 
 /**
  * @returns {Promise<Object>} Configuration object
@@ -154,7 +129,7 @@ module.exports = {
     getAllAssignments,
     getAssignmentsByEmployee,
     getAssignmentsByEmployeeAndDate,
-    assignmentExists,
-    saveAssignments,
+    // REMOVED: assignmentExists
+    // REMOVED: saveAssignments
     getConfig
 };

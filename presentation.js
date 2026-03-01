@@ -51,23 +51,7 @@ async function addNewEmployee() {
     console.log('Employee added...');
 }
 
-/**
- * Prompts user for employee ID and shift ID, then assigns employee to shift.
- *
- * @returns {Promise<void>}
- */
-async function assignEmployeeToShift() {
-    const employeeId = prompt('Enter employee ID: ').trim();
-    const shiftId = prompt('Enter shift ID: ').trim();
-
-    if (!employeeId || !shiftId) {
-        console.log('Employee ID and Shift ID required');
-        return;
-    }
-
-    const result = await businessLogic.assignEmployeeToShift(employeeId, shiftId);
-    console.log(result.message);
-}
+// REMOVED: assignEmployeeToShift - feature removed per assignment instructions
 
 /**
  * Prompts user for employee ID and displays their schedule in CSV format.
@@ -97,9 +81,9 @@ function displayMenu() {
     console.log('\nEmployee Scheduling System');
     console.log('1. Show all employees');
     console.log('2. Add new employee');
-    console.log('3. Assign employee to shift');
-    console.log('4. View employee schedule');
-    console.log('5. Exit');
+    console.log('3. View employee schedule');  // was option 4
+    console.log('4. Exit');                     // was option 5
+    // REMOVED: option 3 - Assign employee to shift
 }
 
 /**
@@ -115,11 +99,9 @@ async function runApplication() {
         } else if (choice === '2') {
             await addNewEmployee();
         } else if (choice === '3') {
-            await assignEmployeeToShift();
+            await viewEmployeeSchedule();  // was option 4
         } else if (choice === '4') {
-            await viewEmployeeSchedule();
-        } else if (choice === '5') {
-            console.log('Goodbye!');
+            console.log('Goodbye!');        // was option 5
             break;
         } else {
             console.log('Invalid choice');
@@ -127,10 +109,8 @@ async function runApplication() {
     }
 }
 
-
 runApplication();
 
-/* Keeping export is optional, but harmless */
 module.exports = {
     runApplication
 };

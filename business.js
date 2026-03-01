@@ -74,96 +74,14 @@ async function createEmployee(name, phone) {
     return newEmployee;
 }
 
-/**
- * Checks if an employee ID exists.
- */
-async function validateEmployeeExists(employeeId) {
-    return (await persistence.findEmployee(employeeId)) !== null;
-}
+// REMOVED: validateEmployeeExists     
+// REMOVED: validateShiftExists         
+// REMOVED: getEmployeeHoursForDate   
+// REMOVED: checkHourLimit              
+// REMOVED: assignEmployeeToShift       
 
 /**
- * Checks if a shift ID exists.
- */
-async function validateShiftExists(shiftId) {
-    return (await persistence.findShift(shiftId)) !== null;
-}
-
-/**
- * Calculates how many hours an employee already has on a given date.
- */
-async function getEmployeeHoursForDate(employeeId, date) {
-    const shifts = await persistence.getAssignmentsByEmployeeAndDate(employeeId, date);
-    let totalHours = 0;
-
-    for (let i = 0; i < shifts.length; i++) {
-        totalHours += computeShiftDuration(shifts[i].startTime, shifts[i].endTime);
-    }
-
-    return totalHours;
-}
-
-/**
- * Checks whether adding a shift would exceed the daily hour limit.
- */
-async function checkHourLimit(employeeId, shiftId) {
-    const config = await persistence.getConfig();
-    let maxDailyHours = Number(config.maxDailyHours);
-
-    if (isNaN(maxDailyHours) || maxDailyHours <= 0) {
-        maxDailyHours = 9;
-    }
-
-    const shift = await persistence.findShift(shiftId);
-    if (!shift) {
-        return { allowed: false, reason: 'Shift does not exist' };
-    }
-
-    const shiftHours = computeShiftDuration(shift.startTime, shift.endTime);
-    const currentHours = await getEmployeeHoursForDate(employeeId, shift.date);
-
-    if (currentHours + shiftHours > maxDailyHours) {
-        return {
-            allowed: false,
-            reason: 'Assignment would exceed daily limit of ' + maxDailyHours + ' hours'
-        };
-    }
-
-    return { allowed: true };
-}
-
-/**
- * Assigns an employee to a shift after all checks pass.
- */
-async function assignEmployeeToShift(employeeId, shiftId) {
-    const empId = String(employeeId).trim();
-    const shId = String(shiftId).trim();
-
-    if (!(await validateEmployeeExists(empId))) {
-        return { success: false, message: 'Employee does not exist' };
-    }
-
-    if (!(await validateShiftExists(shId))) {
-        return { success: false, message: 'Shift does not exist' };
-    }
-
-    if (await persistence.assignmentExists(empId, shId)) {
-        return { success: false, message: 'Assignment already exists' };
-    }
-
-    const hourCheck = await checkHourLimit(empId, shId);
-    if (!hourCheck.allowed) {
-        return { success: false, message: 'Cannot assign: ' + hourCheck.reason };
-    }
-
-    const assignments = await persistence.getAllAssignments();
-    assignments.push({ employeeId: empId, shiftId: shId });
-    await persistence.saveAssignments(assignments);
-
-    return { success: true, message: 'Shift Recorded' };
-}
-
-/**
- * Returns an employee’s schedule sorted by date and time.
+ * Returns an employee's schedule sorted by date and time.
  */
 async function getEmployeeSchedule(employeeId) {
     const empId = String(employeeId).trim();
@@ -199,6 +117,6 @@ module.exports = {
     computeShiftDuration,
     getEmployeeList,
     createEmployee,
-    assignEmployeeToShift,
     getEmployeeSchedule
+    // REMOVED: assignEmployeeToShift
 };
