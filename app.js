@@ -86,7 +86,7 @@ app.get('/edit/:id', async (req, res) => {
 app.post('/edit/:id', async (req, res) => {
     const name = req.body.name.trim();
     const phone = req.body.phone.trim();
-    const employeeId = req.params.id;
+    const id = req.params.id;
 
     // Server-side validation
     if (!name) {
@@ -100,7 +100,7 @@ app.post('/edit/:id', async (req, res) => {
         return;
     }
 
-    await business.updateEmployee(employeeId, name, phone);
+    await business.updateEmployee(id, name, phone);
 
     // PRG pattern - redirect to landing page after successful update
     res.redirect('/');
