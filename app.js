@@ -1,9 +1,14 @@
 const express = require('express');
 const { engine } = require('express-handlebars');
+const crypto = require('crypto');
 const business = require('./business');
+const persistence = require('./Persistence');
 
 const app = express();
 const PORT = 8000;
+
+// In-memory session store: { sessionId: { username, expiresAt } }
+const sessions = {};
 
 // Set up Handlebars as the view engine
 app.engine('handlebars', engine({ extname: '.handlebars' }));
@@ -12,6 +17,145 @@ app.set('views', __dirname + '/templates');
 
 // Middleware to parse form data
 app.use(express.urlencoded({ extended: false }));
+
+/**
+ * Generates a random session ID string.
+ *
+ * @returns {string} A random hex session ID
+ */
+function generateSessionId() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * Hashes a plain text password using SHA-256.
+ *
+ * @param {string} password - The plain text password
+ * @returns {string} The SHA-256 hex hash of the password
+ */
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+/**
+ * Middleware: Logs every request to the security_log collection in MongoDB.
+ * Records timestamp, username (if known), URL, and HTTP method.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+async function securityLogger(req, res, next) {
+    const sessionId = req.headers.cookie ? req.headers.cookie.replace('sessionId=', '') : null;
+    let username = null;
+
+    if (sessionId && sessions[sessionId]) {
+        username = sessions[sessionId].username;
+    }
+
+    await persistence.logAccess({
+        timestamp: new Date(),
+        username: username,
+        url: req.url,
+        method: req.method
+    });
+
+    next();
+}
+
+/**
+ * Middleware: Protects all routes except /login and /logout.
+ * If no valid session exists, redirects the user to /login.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+function requireAuth(req, res, next) {
+    if (req.path === '/login' || req.path === '/logout') {
+        return next();
+    }
+
+    const sessionId = req.headers.cookie ? req.headers.cookie.replace('sessionId=', '') : null;
+
+    if (!sessionId || !sessions[sessionId]) {
+        return res.redirect('/login?message=Please log in to continue');
+    }
+
+    if (sessions[sessionId].expiresAt < Date.now()) {
+        delete sessions[sessionId];
+        return res.redirect('/login?message=Session expired. Please log in again');
+    }
+
+    // Extend session by 5 minutes on every visit
+    sessions[sessionId].expiresAt = Date.now() + 5 * 60 * 1000;
+    res.setHeader('Set-Cookie', 'sessionId=' + sessionId + '; HttpOnly; Max-Age=300');
+
+    next();
+}
+
+// Apply middleware globally
+app.use(securityLogger);
+app.use(requireAuth);
+
+/**
+ * GET /login
+ * Displays the login page with an optional message.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+app.get('/login', (req, res) => {
+    const message = req.query.message || null;
+    res.render('login', { message: message, layout: false });
+});
+
+/**
+ * POST /login
+ * Handles login form submission.
+ * Validates credentials and creates a session on success.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+app.post('/login', async (req, res) => {
+    const username = req.body.username ? req.body.username.trim() : '';
+    const password = req.body.password ? req.body.password.trim() : '';
+
+    const hashed = hashPassword(password);
+    const user = await persistence.findUser(username, hashed);
+
+    if (!user) {
+        return res.redirect('/login?message=Invalid username or password');
+    }
+
+    const sessionId = generateSessionId();
+    sessions[sessionId] = {
+        username: username,
+        expiresAt: Date.now() + 5 * 60 * 1000
+    };
+
+    res.setHeader('Set-Cookie', 'sessionId=' + sessionId + '; HttpOnly; Max-Age=300');
+    res.redirect('/');
+});
+
+/**
+ * GET /logout
+ * Clears the session and cookie, then redirects to login.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+app.get('/logout', (req, res) => {
+    const sessionId = req.headers.cookie ? req.headers.cookie.replace('sessionId=', '') : null;
+
+    if (sessionId && sessions[sessionId]) {
+        delete sessions[sessionId];
+    }
+
+    res.setHeader('Set-Cookie', 'sessionId=; HttpOnly; Max-Age=0');
+    res.redirect('/login?message=You have been logged out');
+});
 
 /**
  * GET /

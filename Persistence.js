@@ -92,11 +92,38 @@ async function getShiftsByEmployee(employeeObjectId) {
     return await db.collection('shifts').find({ employees: employeeObjectId }).toArray();
 }
 
+/**
+ * Finds a user by username and hashed password.
+ *
+ * @param {string} username - The username to search for
+ * @param {string} hashedPassword - The SHA-256 hashed password
+ * @returns {Promise<Object|null>} The user object if found, null otherwise
+ */
+async function findUser(username, hashedPassword) {
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    return await db.collection('users').findOne({ username: username, password: hashedPassword });
+}
+
+/**
+ * Inserts a security log entry into the security_log collection.
+ *
+ * @param {Object} logEntry - The log entry containing timestamp, username, url, and method
+ * @returns {Promise<void>}
+ */
+async function logAccess(logEntry) {
+    let c = await getClient();
+    let db = c.db(DB_NAME);
+    await db.collection('security_log').insertOne(logEntry);
+}
+
 module.exports = {
     getAllEmployees,
     findEmployee,
     saveEmployee,
     updateEmployee,
     getAllShifts,
-    getShiftsByEmployee
+    getShiftsByEmployee,
+    findUser,
+    logAccess
 };
