@@ -3,7 +3,6 @@ const mongodb = require('mongodb');
 
 /**
  * Calculates how many hours a shift lasts.
- * Times are given in HH:MM format.
  *
  * @param {string} startTime - Start time in HH:MM format
  * @param {string} endTime - End time in HH:MM format
@@ -59,7 +58,6 @@ async function getEmployeeSchedule(id) {
     const employeeObjectId = new mongodb.ObjectId(id);
     const schedule = await persistence.getShiftsByEmployee(employeeObjectId);
 
-    // Sort by date and startTime using bubble sort (no forbidden array methods)
     for (let i = 0; i < schedule.length - 1; i++) {
         for (let j = 0; j < schedule.length - 1 - i; j++) {
             if (
@@ -98,11 +96,74 @@ async function updateEmployee(id, name, phone) {
     await persistence.updateEmployee(id, name, phone);
 }
 
+/**
+ * Retrieves all documents for a given employee.
+ *
+ * @param {string} employeeId - The MongoDB ObjectId string of the employee
+ * @returns {Promise<Array>} Array of document metadata objects
+ */
+async function getEmployeeDocuments(employeeId) {
+    return await persistence.getDocumentsByEmployee(String(employeeId).trim());
+}
+
+/**
+ * Counts how many documents an employee already has uploaded.
+ *
+ * @param {string} employeeId - The MongoDB ObjectId string of the employee
+ * @returns {Promise<number>} The document count
+ */
+async function countEmployeeDocuments(employeeId) {
+    const docs = await persistence.getDocumentsByEmployee(String(employeeId).trim());
+    return docs.length;
+}
+
+/**
+ * Saves document metadata after a successful file upload.
+ *
+ * @param {string} employeeId - The MongoDB ObjectId string of the employee
+ * @param {string} filename - The stored filename on disk
+ * @param {string} originalName - The original filename from the uploader
+ * @returns {Promise<void>}
+ */
+async function saveDocumentMeta(employeeId, filename, originalName) {
+    await persistence.saveDocumentMeta({
+        employeeId: String(employeeId).trim(),
+        filename: filename,
+        originalName: originalName,
+        uploadedAt: new Date()
+    });
+}
+
+/**
+ * Finds a document metadata record by its database ID.
+ *
+ * @param {string} docId - The MongoDB ObjectId string of the document
+ * @returns {Promise<Object|null>} The document metadata object, or null if not found
+ */
+async function findDocumentById(docId) {
+    return await persistence.findDocumentById(String(docId).trim());
+}
+
+/**
+ * Deletes a document metadata record from the database.
+ *
+ * @param {string} docId - The MongoDB ObjectId string of the document
+ * @returns {Promise<void>}
+ */
+async function deleteDocumentRecord(docId) {
+    await persistence.deleteDocumentById(String(docId).trim());
+}
+
 module.exports = {
     computeShiftDuration,
     getEmployeeList,
     createEmployee,
     getEmployeeSchedule,
     findEmployee,
-    updateEmployee
+    updateEmployee,
+    getEmployeeDocuments,
+    countEmployeeDocuments,
+    saveDocumentMeta,
+    findDocumentById,
+    deleteDocumentRecord
 };
